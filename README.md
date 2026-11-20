@@ -4,13 +4,36 @@ JMeter load and stress test plans for a public demo API. Built as hands-on pract
 
 Target: https://jsonplaceholder.typicode.com (a free public fake API, no real data is created).
 
+## Folder tree
+
+```
+jmeter-performance-testing/
+├── ARCHITECTURE.md            # folder tree, data flow, how to add a plan
+├── README.md                  # this file
+├── .env.example               # optional local overrides (no secrets in this repo)
+├── .gitignore
+├── config/
+│   └── user.properties        # host, protocol, port, timeouts, thread counts
+├── docs/
+│   ├── SETUP.md               # install JMeter, run plans, property overrides
+│   └── TESTING.md             # what is tested, how to read HTML reports
+├── test-data/
+│   └── users.csv              # 10 rows of userId, postId, title
+├── test-plans/
+│   ├── load-test.jmx          # 10 threads, 10 s ramp-up, 5 loops
+│   └── stress-test.jmx        # 50 threads, 30 s ramp-up, 10 loops
+├── results/                   # git-ignored: .jtl output from runs
+└── reports/                   # git-ignored: HTML dashboard output from runs
+```
+
 ## What is in here
 
 | File | What it does |
 | --- | --- |
 | `test-plans/load-test.jmx` | Load test: 10 threads, 10 second ramp-up, 5 loops |
 | `test-plans/stress-test.jmx` | Stress test: 50 threads, 30 second ramp-up, 10 loops, same requests at higher load |
-| `data/users.csv` | Test data: 10 rows of `userId`, `postId`, `title`, used by both plans through `${userId}`, `${postId}` and `${title}` |
+| `test-data/users.csv` | Test data: 10 rows of `userId`, `postId`, `title`, used by both plans through `${userId}`, `${postId}` and `${title}` |
+| `config/user.properties` | All tunables: target host, protocol, port, timeouts, thread counts. Loaded with `-p`, overridable with `-J` |
 
 Both plans hit the same three requests:
 
@@ -25,28 +48,33 @@ Both plans hit the same three requests:
 - `POST /posts` returns 201, with `Content-Type: application/json`
 - Summary Report and Aggregate Report listeners are included in both plans, so you can see average, min, max, error % and throughput in the GUI
 
-## Requirements
+See [docs/TESTING.md](docs/TESTING.md) for the full breakdown and how to read the HTML dashboard reports.
+
+## Setup
 
 - Apache JMeter 5.6.x (Java 8 or later). JMeter is not installed in this workspace yet.
 - No other setup is needed. The target is public, so there is nothing to install or log in to.
 
+Full install steps and property overrides: [docs/SETUP.md](docs/SETUP.md).
+
 ## How to run (headless)
 
-Run from the repo root, so the CSV path `data/users.csv` resolves:
+Run from the repo root, so the CSV path `test-data/users.csv` resolves:
 
 ```bash
 # Load test
-jmeter -n -t test-plans/load-test.jmx -l results/load-test.jtl -e -o reports/load-test
+jmeter -p config/user.properties -n -t test-plans/load-test.jmx -l results/load-test.jtl -e -o reports/load-test
 
 # Stress test
-jmeter -n -t test-plans/stress-test.jmx -l results/stress-test.jtl -e -o reports/stress-test
+jmeter -p config/user.properties -n -t test-plans/stress-test.jmx -l results/stress-test.jtl -e -o reports/stress-test
 ```
 
 Notes:
 
-- `-n` is non-GUI (headless) mode, `-t` is the test plan, `-l` is the results file, `-e -o` generates the HTML dashboard in the given folder.
+- `-p` loads `config/user.properties`, `-n` is non-GUI (headless) mode, `-t` is the test plan, `-l` is the results file, `-e -o` generates the HTML dashboard in the given folder.
 - Delete or rename an old `results/*.jtl` file and `reports/*` folder before re-running, or JMeter will refuse to overwrite the report folder.
-- To open a plan in the GUI instead: `jmeter -t test-plans/load-test.jmx`
+- Override any value for one run without editing files, e.g. `jmeter -p config/user.properties -Jhost=api.example.com -Jload.threads=20 -n -t test-plans/load-test.jmx ...`
+- To open a plan in the GUI instead: `jmeter -p config/user.properties -t test-plans/load-test.jmx`
 
 ## How to generate the HTML dashboard from an existing results file
 
@@ -58,7 +86,7 @@ Open `reports/load-test/index.html` in a browser.
 
 ## Results
 
-No results yet. No run has been done from this repo, so no response times, error rates or throughput numbers are claimed here. Results will be added after a real run.
+No results yet. No run has been done from this repo, so no response times, error rates or throughput numbers are claimed here. JMeter is not installed in this workspace, the plans have only been checked as valid XML, and no `.jtl` or report output exists. Results will be added after a real run.
 
 ## Notes
 

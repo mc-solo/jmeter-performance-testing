@@ -2,3 +2,4 @@ results/
 reports/
 *.jtl
 *.log
+.env
