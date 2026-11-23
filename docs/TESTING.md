@@ -17,9 +17,9 @@ Both plans run these samplers, in order, for every thread and loop:
 
 | Sampler | Check |
 | --- | --- |
-| `GET /posts` | Returns 200, and finishes in under 5000 ms (Duration Assertion) |
-| `GET /posts/${postId}` | Returns 200, and the response body contains the expected `"userId": ${userId}` from the CSV row |
-| `POST /posts` | Returns 201, with `Content-Type: application/json`; body is `{"title": "${title}", "body": "Performance test post", "userId": ${userId}}` |
+| `GET /posts` | Returns 200, finishes in under 5000 ms (Duration Assertion), and the body contains `"userId"` and `"title"` |
+| `GET /posts/${postId}` | Returns 200, finishes in under 5000 ms, and the body contains the expected `"userId": ${userId}` from the CSV row plus `"title"` and `"body"` |
+| `POST /posts` | Returns 201, with `Content-Type: application/json`; body is `{"title": "${title}", "body": "Performance test post", "userId": ${userId}}`; the created body echoes `"title": "${title}"` and `"userId": ${userId}`, and finishes in under 5000 ms |
 
 Both plans also include a Summary Report and an Aggregate Report listener,
 so average, min, max, error % and throughput are visible in the GUI.
@@ -38,7 +38,22 @@ Notes:
 
 ## How to run
 
-See [SETUP.md](SETUP.md). Short version, from the repo root:
+See [SETUP.md](SETUP.md). Short version, from the repo root, using
+the run script (it clears the old `.jtl` and report folder first,
+because JMeter refuses to overwrite a report folder):
+
+```bash
+# Load test
+./scripts/run-jmeter.sh load
+
+# Stress test
+./scripts/run-jmeter.sh stress
+
+# Stress test with an override (any -J property from config/user.properties)
+./scripts/run-jmeter.sh stress -Jstress.threads=20
+```
+
+The same runs without the script:
 
 ```bash
 # Load test

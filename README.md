@@ -22,6 +22,8 @@ jmeter-performance-testing/
 ├── test-plans/
 │   ├── load-test.jmx          # 10 threads, 10 s ramp-up, 5 loops
 │   └── stress-test.jmx        # 50 threads, 30 s ramp-up, 10 loops
+├── scripts/
+│   └── run-jmeter.sh          # headless run + HTML dashboard for load|stress
 ├── results/                   # git-ignored: .jtl output from runs
 └── reports/                   # git-ignored: HTML dashboard output from runs
 ```
@@ -43,9 +45,9 @@ Both plans hit the same three requests:
 
 ## What is checked
 
-- `GET /posts` returns 200, and finishes in under 5000 ms (Duration Assertion)
-- `GET /posts/${postId}` returns 200, and the response contains the expected `userId` from the CSV row
-- `POST /posts` returns 201, with `Content-Type: application/json`
+- `GET /posts` returns 200, finishes in under 5000 ms (Duration Assertion), and the body contains `"userId"` and `"title"`
+- `GET /posts/${postId}` returns 200, finishes in under 5000 ms, and the body contains the expected `userId` from the CSV row plus `"title"` and `"body"`
+- `POST /posts` returns 201, with `Content-Type: application/json`, the created body echoes the CSV title and userId, and it finishes in under 5000 ms
 - Summary Report and Aggregate Report listeners are included in both plans, so you can see average, min, max, error % and throughput in the GUI
 
 See [docs/TESTING.md](docs/TESTING.md) for the full breakdown and how to read the HTML dashboard reports.
@@ -60,6 +62,16 @@ Full install steps and property overrides: [docs/SETUP.md](docs/SETUP.md).
 ## How to run (headless)
 
 Run from the repo root, so the CSV path `test-data/users.csv` resolves:
+
+```bash
+# Load test
+./scripts/run-jmeter.sh load
+
+# Stress test
+./scripts/run-jmeter.sh stress
+```
+
+Or the same runs without the script:
 
 ```bash
 # Load test
