@@ -2,9 +2,10 @@
 # Run a JMeter test plan headless and generate the HTML dashboard.
 #
 # Usage:
-#   ./scripts/run-jmeter.sh [load|stress] [extra jmeter -J overrides...]
+#   ./scripts/run-jmeter.sh [load|stress|spike] [extra jmeter -J overrides...]
 #   ./scripts/run-jmeter.sh load
 #   ./scripts/run-jmeter.sh stress -Jstress.threads=20
+#   ./scripts/run-jmeter.sh spike -Jspike.threads=50
 #
 # Outputs (results/ and reports/ are git-ignored):
 #   results/<plan>-test.jtl   raw samples
@@ -18,8 +19,8 @@ cd "$(dirname "$0")/.."
 
 PLAN="${1:-load}"
 shift || true
-if [ "$PLAN" != "load" ] && [ "$PLAN" != "stress" ]; then
-  echo "Usage: $0 [load|stress] [extra -J overrides...]" >&2
+if [ "$PLAN" != "load" ] && [ "$PLAN" != "stress" ] && [ "$PLAN" != "spike" ]; then
+  echo "Usage: $0 [load|stress|spike] [extra -J overrides...]" >&2
   exit 2
 fi
 

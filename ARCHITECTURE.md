@@ -1,5 +1,16 @@
 # Architecture
 
+## Diagram
+
+```mermaid
+flowchart LR
+    CFG[config/user.properties] --> PLAN[test-plans/]
+    TD[test-data/users.csv] --> PLAN
+    PLAN --> JM[JMeter run]
+    JM --> RES[results/]
+    JM --> REP[reports/ HTML dashboard]
+```
+
 ## Folder tree
 
 ```
@@ -17,7 +28,8 @@ jmeter-performance-testing/
 │   └── users.csv              # 10 rows of userId, postId, title
 ├── test-plans/
 │   ├── load-test.jmx          # 10 threads, 10 s ramp-up, 5 loops
-│   └── stress-test.jmx        # 50 threads, 30 s ramp-up, 10 loops
+│   ├── stress-test.jmx        # 50 threads, 30 s ramp-up, 10 loops
+│   └── spike-test.jmx         # 100 threads, 5 s ramp-up, 45 s duration, loops until duration ends
 ├── results/                   # git-ignored: .jtl output from runs
 └── reports/                   # git-ignored: HTML dashboard output from runs
 ```
@@ -27,7 +39,7 @@ jmeter-performance-testing/
 | Folder / file | Purpose |
 | --- | --- |
 | `config/` | One place for every value that changes between runs or environments. `user.properties` holds the target host, protocol, port, timeouts and thread counts. Nothing in `test-plans/` hard-codes these any more. |
-| `test-data/` | The canonical home for input data. `users.csv` is the only data file; both plans read it by the relative path `test-data/users.csv`. |
+| `test-data/` | The canonical home for input data. `users.csv` is the only data file; all three plans read it by the relative path `test-data/users.csv`. |
 | `test-plans/` | The JMeter plans (`.jmx`, XML). Each plan is one scenario: a thread group, HTTP defaults, a CSV Data Set Config, samplers, assertions and listeners. |
 | `docs/` | Setup and testing guides, so the README stays short. |
 | `results/` / `reports/` | Run output only. `results/` holds raw `.jtl` result files, `reports/` holds the generated HTML dashboards. Both are git-ignored and start empty. |
@@ -64,14 +76,15 @@ test-data/users.csv ── CSV Data Set Config ────┤
 - **config → test-plans:** `config/user.properties` defines `host`,
   `protocol`, `port`, `connect.timeout`, `response.timeout`,
   `load.threads`, `load.rampup`, `load.loops`, `stress.threads`,
-  `stress.rampup`, `stress.loops`. The plans reference them only through
+  `stress.rampup`, `stress.loops`, `spike.threads`, `spike.rampup`,
+  `spike.duration`, `spike.loops`. The plans reference them only through
   `${__P(...)}` in HTTP Request Defaults and in the thread group / loop
   controller. The only hard-coded host left is the fallback default inside
   `${__P(host,jsonplaceholder.typicode.com)}` and the prose in the plan
   comments. The 5000 ms Duration Assertion stays a literal in the `.jmx`
   files because JMeter does not evaluate functions there; it is mirrored
   as `duration.max.ms` in `config/user.properties`.
-- **test-data → test-plans:** both plans point their CSV Data Set Config
+- **test-data → test-plans:** all three plans point their CSV Data Set Config
   at the same file, `test-data/users.csv`. The old `data/` folder is gone;
   there is no duplicate or symlink.
 - **test-plans → results/reports:** a plan run with `-l` writes

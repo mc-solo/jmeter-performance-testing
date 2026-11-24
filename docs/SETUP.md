@@ -30,7 +30,7 @@
 
 ## Run a plan
 
-Always run from the **repo root**. The CSV path in both plans is the
+Always run from the **repo root**. The CSV path in all three plans is the
 relative path `test-data/users.csv`, so it only resolves from the root.
 
 ```bash
@@ -39,6 +39,9 @@ jmeter -p config/user.properties -n -t test-plans/load-test.jmx -l results/load-
 
 # Stress test
 jmeter -p config/user.properties -n -t test-plans/stress-test.jmx -l results/stress-test.jtl -e -o reports/stress-test
+
+# Spike test
+jmeter -p config/user.properties -n -t test-plans/spike-test.jmx -l results/spike-test.jtl -e -o reports/spike-test
 ```
 
 Flags: `-p` loads the properties file, `-n` is non-GUI (headless) mode,
@@ -75,6 +78,7 @@ jmeter -p config/user.properties -Jhost=api.example.com -Jload.threads=20 -Jload
 | `-Jresponse.timeout=` | response timeout, ms | `30000` |
 | `-Jload.threads=` / `-Jload.rampup=` / `-Jload.loops=` | load test size | `10` / `10` / `5` |
 | `-Jstress.threads=` / `-Jstress.rampup=` / `-Jstress.loops=` | stress test size | `50` / `30` / `10` |
+| `-Jspike.threads=` / `-Jspike.rampup=` / `-Jspike.duration=` / `-Jspike.loops=` | spike test size | `100` / `5` / `45` / `-1` (loops forever until the duration ends) |
 
 `-J` on the command line beats `config/user.properties`, which beats the
 built-in default in the `.jmx` file.

@@ -2,7 +2,7 @@
 
 ## What is tested
 
-Both plans hit the same three requests against the target API
+All three plans hit the same three requests against the target API
 (`https://jsonplaceholder.typicode.com`, a free public fake API). Test
 data comes from `test-data/users.csv` (10 rows of `userId`, `postId`,
 `title`), read by a CSV Data Set Config and reused as `${userId}`,
@@ -12,8 +12,20 @@ data comes from `test-data/users.csv` (10 rows of `userId`, `postId`,
 | --- | --- | --- | --- | --- |
 | `test-plans/load-test.jmx` | 10 | 10 s | 5 | 50 |
 | `test-plans/stress-test.jmx` | 50 | 30 s | 10 | 500 |
+| `test-plans/spike-test.jmx` | 100 | 5 s | forever, until the 45 s scheduler duration ends | variable, depends on response time during the 45 s |
 
-Both plans run these samplers, in order, for every thread and loop:
+The spike plan is shaped differently from the other two: it ramps to its
+100-thread peak in 5 seconds, holds at peak, then ramps down. The hold
+and ramp-down are set by `spike.duration=45` in
+`config/user.properties` (5 s ramp-up + 30 s hold at peak + 10 s
+ramp-down window), with `spike.loops=-1` so threads keep looping until
+the duration ends. The stock ThreadGroup has no stepped ramp-down: after
+the duration expires threads finish their in-flight iteration and exit,
+so the load tapers off rather than stepping down. A stepped ramp-down
+would need the Ultimate Thread Group plugin, which is not used here so
+the plan runs on stock JMeter 5.6.3.
+
+All three plans run these samplers, in order, for every thread and loop:
 
 | Sampler | Check |
 | --- | --- |
@@ -21,7 +33,7 @@ Both plans run these samplers, in order, for every thread and loop:
 | `GET /posts/${postId}` | Returns 200, finishes in under 5000 ms, and the body contains the expected `"userId": ${userId}` from the CSV row plus `"title"` and `"body"` |
 | `POST /posts` | Returns 201, with `Content-Type: application/json`; body is `{"title": "${title}", "body": "Performance test post", "userId": ${userId}}`; the created body echoes `"title": "${title}"` and `"userId": ${userId}`, and finishes in under 5000 ms |
 
-Both plans also include a Summary Report and an Aggregate Report listener,
+All three plans also include a Summary Report and an Aggregate Report listener,
 so average, min, max, error % and throughput are visible in the GUI.
 
 Notes:
@@ -31,6 +43,11 @@ Notes:
 - The stress plan is meant to push harder than the load plan. Slower
   responses or some errors under stress are expected, and are part of what
   the test is for.
+- The spike plan is meant to hit the target with a sudden peak. Slower
+  responses or some errors at the peak are expected, and are part of what
+  the test is for. What matters most is whether the target recovers after
+  the spike: check the response time graph in `reports/spike-test/` for
+  the peak, then for response times coming back down as threads taper off.
 - The 5000 ms threshold is a literal in the Duration Assertion inside the
   `.jmx` files (JMeter does not evaluate `${__P(...)}` there). It is also
   recorded as `duration.max.ms` in `config/user.properties`; if you change
@@ -49,8 +66,14 @@ because JMeter refuses to overwrite a report folder):
 # Stress test
 ./scripts/run-jmeter.sh stress
 
+# Spike test
+./scripts/run-jmeter.sh spike
+
 # Stress test with an override (any -J property from config/user.properties)
 ./scripts/run-jmeter.sh stress -Jstress.threads=20
+
+# Spike test with an override
+./scripts/run-jmeter.sh spike -Jspike.threads=50
 ```
 
 The same runs without the script:
@@ -61,12 +84,15 @@ jmeter -p config/user.properties -n -t test-plans/load-test.jmx -l results/load-
 
 # Stress test
 jmeter -p config/user.properties -n -t test-plans/stress-test.jmx -l results/stress-test.jtl -e -o reports/stress-test
+
+# Spike test
+jmeter -p config/user.properties -n -t test-plans/spike-test.jmx -l results/spike-test.jtl -e -o reports/spike-test
 ```
 
 ## How to read the HTML dashboard report
 
 After a run, open `reports/load-test/index.html` (or
-`reports/stress-test/index.html`) in a browser.
+`reports/stress-test/index.html` or `reports/spike-test/index.html`) in a browser.
 
 - **Dashboard / overview:** the headline numbers — total samples, error
   %, average / min / max response time, throughput (requests per second).
